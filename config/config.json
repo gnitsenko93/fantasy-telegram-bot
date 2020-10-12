@@ -1,0 +1,15 @@
+{
+    "storage": {
+        "url": "mongodb://localhost:32768",
+        "options": {
+            "client": {
+                "useUnifiedTopology": true
+            },
+            "db": "test_db",
+            "collections": [
+                "managers",
+                "leagues"
+            ]
+        }
+    }
+}
