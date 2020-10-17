@@ -1,29 +1,37 @@
 'use strict';
 
-const { Logable } = require('../../lib/log');
+const uuid = require('uuid').v4;
 
-class ManagerModel extends Logable {
+const Model = require('../../lib/model');
 
-    constructor(options) {
-        super(options);
+/** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
+/** @typedef {import('../../service/manager/manager-service').ManagerData} ManagerData */
 
-        const {
-            collection = 'managers',
-        } = options.config;
+class ManagerModel extends Model {
 
-        this._collection = collection;
-
-        this._storage = options.storage;
-    }
-
+    /**
+     * @param {LoggingContext} ctx -
+     * @param {Object} options -
+     * @param {number} [options.userId] -
+     * @param {string} [options.secret] -
+     * @returns {Promise<ManagerData>} -
+     */
     async load(ctx, options) {
         try {
-            const { userId } = options;
+            const { userId, secret } = options;
     
-            this.logDebug(ctx, 'Loading a manager.', { userId });
+            this.logDebug(ctx, 'Loading a manager.', { userId, secret });
+
+            let query = {};
+
+            if (secret) { 
+                query.secret = secret; 
+            } else {
+                query.userId = userId;
+            }
     
             const manager = await this._storage.get(ctx, { 
-                query: { userId }, collection: this._collection, 
+                query, collection: this._collection, 
             });
     
             if (!manager) { 
@@ -32,7 +40,7 @@ class ManagerModel extends Logable {
                 return null; 
             } 
     
-            this.logDebug(ctx, 'A manager is loaded.', { manager });
+            this.logDebug(ctx, 'A manager is loaded.', { userId: manager.userId, manager });
     
             return manager;
         } catch (error) {
@@ -41,46 +49,64 @@ class ManagerModel extends Logable {
         }
     }
 
+    /**
+     * @param {LoggingContext} ctx -
+     * @param {{ user: ManagerData }} options -
+     * @returns {Promise<ManagerData>} -
+     */
     async create(ctx, options) {
         try {
-            const {
-                name, userId,
-            } = options;
+            const { user } = options;
 
-            this.logDebug(ctx, 'Creating a manager.', { ...options });
-    
-            const value = {
-                name,
-                userId,
-            };
+            const secret = uuid();
+
+            const value = { secret, ...user };
+
+            this.logDebug(ctx, 'Creating a manager.', { ...value });
     
             const manager = await this._storage.set(ctx, { 
                 value, collection: this._collection,
             });
 
-            this.logDebug(ctx, 'A manager is created.', { manager: value });
+            const { userId } = manager;
+
+            this.logDebug(ctx, 'A manager is created.', { userId, ...manager });
     
-            return value;
+            return manager;
         } catch (error) {
             this.logError(ctx, 'Error on creating a manager.', { error });
             throw error;
         }
     }
 
+    /**
+     * @param {LoggingContext} ctx -
+     * @param {{ user: ManagerData }} options -
+     * @returns {Promise<ManagerData>} -
+     */
     async patch(ctx, options) {
         try {
             const {
-                userId,
-                patch,
+                user
             } = options;
+
+            const { userId, secret } = user;
     
-            this.logDebug(ctx, 'Updating a manager.', { ...options });
-    
+            this.logDebug(ctx, 'Updating a manager.', { userId, patch: user });
+
+            let query = {};
+
+            if (secret) { 
+                query.secret = secret; 
+            } else {
+                query.userId = userId;
+            }
+            
             await this._storage.update(ctx, {
-                patch, query: { userId }, collection: this._collection,
+                patch: user, query, collection: this._collection,
             });
     
-            this.logDebug(ctx, 'A manager is updated.');
+            this.logDebug(ctx, 'A manager is updated.', { userId });
     
             return;
         } catch (error) {

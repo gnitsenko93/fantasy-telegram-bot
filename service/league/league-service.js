@@ -15,6 +15,16 @@ class LeagueService extends Logable {
         });
     }
 
+    async getByLeagueId(ctx, options) {
+        const { leagueId } = options;
+
+        const league = await this._leagueModel.load(ctx, { leagueId });
+
+        if (!league) return null;
+
+        return league;
+    }
+
     async getBySecret(ctx, options) {
         const { secret } = options;
 

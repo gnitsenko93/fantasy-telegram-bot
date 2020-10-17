@@ -1,7 +1,11 @@
 'use strict';
 
 const { MongoClient } = require('mongodb');
+const _ = require('lodash');
+
 const { Logable } = require('../../lib/log');
+
+/** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
 
 class MongoStorage extends Logable {
 
@@ -72,6 +76,12 @@ class MongoStorage extends Logable {
         }
     }
 
+    /**
+     * Sets a value in a storage.
+     * @param {LoggingContext} ctx -
+     * @param {{ value: Object, collection: string }} options -
+     * @returns {Promise<Object>} -
+     */
     async set(ctx, options) {
         try {
             const {
@@ -80,12 +90,15 @@ class MongoStorage extends Logable {
 
             this.logDebug(ctx, 'Setting a value in a collection.', { ...options });
 
-            const entity = await this._db.collection(collection).insertOne(value);
-            const _id = entity.insertedId.toString();
+            const data = { _id: value.id, ..._.omit(value, ['id'])};
 
-            this.logDebug(ctx, 'A value is set in a collection.');
+            const result = await this._db.collection(collection).insertOne(data);
 
-            return { _id, ...value };
+            const id = result.insertedId.toString();
+
+            this.logDebug(ctx, 'A value is set in a collection.', { id, ...value });
+
+            return { id, ...value };
         } catch (error) {
             this.logError(ctx, 'Error on setting a value in a collection.', { error });
             throw error;

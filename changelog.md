@@ -1,3 +1,12 @@
+## 2.0.0
+
+* List of supported command:
+    * **/info** sends a manager information to a user;
+    * **/start [secret]** attaches a user to predefined manager;
+    * **/createleague [name]** creates a league with particular name and replies with a league secret;
+    * **/joinleague [secret]** joins a manager to particular league;
+    * **/leaveleague** allows a user to leave a league.
+
 ## 1.0.0
 
 * List of supported commands:

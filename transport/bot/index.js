@@ -3,26 +3,34 @@
 const { Telegraf } = require('telegraf');
 const { Logable } = require('../../lib/log');
 const { factory } = require('../../lib/controller');
-const { CommandController, TextController } = require('./controller');
+const { CommandController } = require('./controller');
 const Middleware = require('./middleware');
 const { LeagueService, ManagerService } = require('../../service');
 
+/**
+ * @typedef {Object} BotTransportOptions
+ * @property {import('../../config')} config -
+ * @property {import('../../storage/mongo/mongo-storage')} storage -
+ */
+/** @typedef {BotTransportOptions & import('../../lib/log/logable').LogableOptions} Options */
+
 class BotTransport extends Logable {
 
+    /**
+     * @constructor
+     * @param {Options} options -
+     */
     constructor(options) {
         super(options);
 
         const {
-            storage
+            config,
+            storage,
         } = options;
 
+        this._config = config;
         this._storage = storage;
-
-        const {
-            token,
-        } = options.config;
-
-        this._bot = new Telegraf(token);
+        this._bot = new Telegraf(this._config.token);
     }
 
     async start(ctx) {
@@ -42,6 +50,7 @@ class BotTransport extends Logable {
         const options = {
             logger: this._logger,
             storage: this._storage,
+            config: this._config,
         };
 
         const leagueService = new LeagueService(options);
@@ -50,24 +59,47 @@ class BotTransport extends Logable {
         const resolveManagerMiddleware = factory(Middleware.ResolveManagerMiddleware, {
             managerService, ...options,
         });
-        const createCommandController = factory(CommandController.CreateCommandController, {
-            leagueService, managerService, ...options,
-        });
+
         const infoCommandController = factory(CommandController.InfoCommandController, {
-            leagueService, managerService, ...options,
+            command: 'info', leagueService, managerService, ...options,
         });
-        const joinCommandController = factory(CommandController.JoinCommandController, {
-            leagueService, managerService, ...options,
+        const startCommandController = factory(CommandController.StartCommandController, {
+            command: 'start', managerService, ...options,
         });
-        const leaveCommandController = factory(CommandController.LeaveCommandController, {
-            managerService, ...options,
+        const createLeagueCommandController = factory(CommandController.CreateLeagueCommandController, {
+            command: 'createleague', leagueService, managerService, ...options,
+        });
+        const joinLeagueCommandController = factory(CommandController.JoinLeagueCommandController, {
+            command: 'joinleague', leagueService, managerService, ...options,
+        });
+        const leaveLeagueCommandController = factory(CommandController.LeaveLeagueCommandController, {
+            command: 'leaveleague', managerService, ...options,
         });
 
+        const createTeamCommandController = factory(CommandController.CreateTeamCommandController, options);
+        const createTransferCommandController = factory(CommandController.CreateTransferCommandController, options);
+        const getTransferCommandController = factory(CommandController.GetTransferCommandController, options);
+        const deleteTransferCommandController = factory(CommandController.DeleteTransferCommandController, options);
+
+        this._bot.command('start', startCommandController);
+
         this._bot.use(resolveManagerMiddleware);
-        this._bot.command('create', createCommandController);
+
         this._bot.command('info', infoCommandController);
-        this._bot.command('join', joinCommandController);
-        this._bot.command('leave', leaveCommandController);
+
+        this._bot.command('createleague', createLeagueCommandController);
+        this._bot.command('joinleague', joinLeagueCommandController);
+        this._bot.command('leaveleague', leaveLeagueCommandController);
+
+        this._bot.command('create-team', createTeamCommandController);
+
+        this._bot.command('create-transfer', createTransferCommandController);
+        this._bot.command('get-transfer', getTransferCommandController);
+        this._bot.command('delete-transfer', deleteTransferCommandController);
+
+        this._bot.catch((error, ctx) => {
+            this.logWarn({}, 'A message is processed with an error.', { error });
+        });
     }
 }
 

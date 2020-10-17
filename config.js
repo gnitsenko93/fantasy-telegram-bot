@@ -16,7 +16,13 @@ const config = convict({
             format: Object,
             default: {},
         }
-    }
+    },
+    options: {
+        enableManagerCreationWithoutSecret: {
+            format: Boolean,
+            default: false,
+        },
+    },
 });
 
 config.loadFile('./config/config.json');

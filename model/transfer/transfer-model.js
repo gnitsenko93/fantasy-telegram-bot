@@ -1,21 +1,19 @@
 'use strict';
 
-class TransferModel {
+const { Logable } = require('../../lib/log');
+
+class TransferModel extends Logable {
 
     constructor(options) {
-        const {
-            parameters: {
-                id,
-                managerId,
-                outbound,
-                inbound,
-            }
-        } = options;
+        super(options);
 
-        this._id = id;
-        this._managerId = managerId;
-        this._outbound = outbound;
-        this._inbound = inbound;
+        const {
+            collection = 'transfers',
+        } = options.config;
+
+        this._collection = collection;
+
+        this._storage = options.storage;
     }
 }
 

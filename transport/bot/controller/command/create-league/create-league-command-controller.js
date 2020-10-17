@@ -2,12 +2,11 @@
 
 const { Controller } = require('../../../../../lib/controller');
 
-class CreateCommandController extends Controller {
+class CreateLeagueCommandController extends Controller {
 
     constructor(options) {
         super(options);
 
-        this._command = '/create';
         this._leagueService = options.leagueService;
         this._managerService = options.managerService;
     }
@@ -17,19 +16,16 @@ class CreateCommandController extends Controller {
             state: {
                 manager,
             },
-            message: {
-                text,
-            },
         } = request;
 
         const {
             userId,
         } = manager;
 
-        const name = text.substr(this._command.length + 1);
+        const name = this._getText(ctx, { request });
 
         if (!name) {
-            request.reply('Please, sent a name for a league. Use /create [name] command.');
+            request.reply('Please, sent a name for a league. Use /create-league [name] command.');
 
             return;
         }
@@ -40,7 +36,9 @@ class CreateCommandController extends Controller {
 
         const secret = await this._leagueService.getSecret(ctx, { league });
 
-        await this._managerService.joinLeague(ctx, { userId, secret });
+        const { leagueId } = league;
+
+        await this._managerService.joinLeague(ctx, { userId, leagueId });
 
         request.reply('A league is created. League name is '+ name +'. League secret is ' + secret + '.');
 
@@ -48,4 +46,4 @@ class CreateCommandController extends Controller {
     }
 }
 
-module.exports = CreateCommandController;
+module.exports = CreateLeagueCommandController;

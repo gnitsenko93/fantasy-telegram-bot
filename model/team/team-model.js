@@ -1,22 +1,22 @@
 'use strict';
 
-class TeamModel {
+const { Logable } = require('../../lib/log');
+
+class TeamModel extends Logable {
 
     constructor(options) {
-        const {
-            parameters: {
-                id,
-                name,
-                managerId,
-                leagueSecret,
-            }
-        } = options;
+        super(options);
 
-        this._id = id;
-        this._name = name;
-        this._managerId = managerId;
-        this._leagueSecret = leagueSecret;
+        const {
+            collection = 'teams',
+        } = options.config;
+
+        this._collection = collection;
+
+        this._storage = options.storage;
     }
+
+    
 }
 
 module.exports = TeamModel;

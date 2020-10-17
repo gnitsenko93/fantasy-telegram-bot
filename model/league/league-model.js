@@ -20,21 +20,28 @@ class LeagueModel extends Logable {
 
     async load(ctx, options) {
         try {
-            const { secret } = options;
+            const { secret, leagueId } = options;
 
-            this.logDebug(ctx, 'Loading a league.', { secret });
+            this.logDebug(ctx, 'Loading a league.', { secret, leagueId });
+
+            let query = {};
+            if (secret) {
+                query.secret = secret;
+            } else {
+                query.leagueId = leagueId;
+            }
 
             const league = await this._storage.get(ctx, { 
-                query: { secret }, collection: this._collection,
+                query, collection: this._collection,
             });
 
             if (!league) {
-                this.logWarn(ctx, 'A league is not found.');
+                this.logWarn(ctx, 'A league is not found.', { secret, leagueId });
 
                 return null;
             }
 
-            this.logDebug(ctx, 'A league is loaded.', { league });
+            this.logDebug(ctx, 'A league is loaded.', { ...league });
 
             return league;
         } catch (error) {
@@ -47,9 +54,10 @@ class LeagueModel extends Logable {
         const { userId, name } = options;
 
         const secret = uuid();
+        const leagueId = uuid();
 
         const league = await this._storage.set(ctx, {
-            value: { userId, name, secret }, 
+            value: { userId, name, secret, leagueId }, 
             collection: this._collection,
         });
 
