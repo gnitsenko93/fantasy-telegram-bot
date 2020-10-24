@@ -7,14 +7,14 @@ class LeaveCommandController extends Controller {
     constructor(options) {
         super(options);
 
-        this._command = '/leave';
-        this._managerService = options.managerService;
+        this._leagueService = options.leagueService;
     }
 
     async process(ctx, { request }) {
         const {
             state: {
                 manager,
+                league,
             },
         } = request;
 
@@ -22,19 +22,21 @@ class LeaveCommandController extends Controller {
             userId,
         } = manager;
 
-        if (!this._managerService.hasLeague(ctx, { manager })) {
-            request.reply('You have not joined a league yet.');
+        if (!league) {
+            request.reply('You have not joined a league yet. To join a league use /joinleague [secret] command.');
 
             return;
         }
 
-        this.log(ctx, 'Leaving a league.', { userId })
+        const { leagueId, name } = league;
 
-        await this._managerService.leaveLeague(ctx, { userId });
+        this.log(ctx, 'Removing a user from a league.', { userId, leagueId });
 
-        request.reply('A league is left.');
+        await this._leagueService.removeFromLeague(ctx, { userId, leagueId });
 
-        this.log(ctx, 'A user left a league.', { userId });
+        request.reply(`${name} league is left.`);
+
+        this.log(ctx, 'A user is removed from a league.', { userId, leagueId });
     }
 }
 

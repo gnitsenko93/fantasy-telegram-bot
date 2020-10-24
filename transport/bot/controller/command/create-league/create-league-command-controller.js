@@ -8,7 +8,6 @@ class CreateLeagueCommandController extends Controller {
         super(options);
 
         this._leagueService = options.leagueService;
-        this._managerService = options.managerService;
     }
 
     async process(ctx, { request }) {
@@ -25,7 +24,7 @@ class CreateLeagueCommandController extends Controller {
         const name = this._getText(ctx, { request });
 
         if (!name) {
-            request.reply('Please, sent a name for a league. Use /create-league [name] command.');
+            request.reply('Please, sent a name for a league. Use /createleague [name] command.');
 
             return;
         }
@@ -34,15 +33,11 @@ class CreateLeagueCommandController extends Controller {
 
         const league = await this._leagueService.create(ctx, { userId, name });
 
-        const secret = await this._leagueService.getSecret(ctx, { league });
+        const { secret } = league;
 
-        const { leagueId } = league;
+        request.reply(`A league is created. League name is ${name}. League secret is ${secret}.`);
 
-        await this._managerService.joinLeague(ctx, { userId, leagueId });
-
-        request.reply('A league is created. League name is '+ name +'. League secret is ' + secret + '.');
-
-        this.log(ctx, 'A league is created.', { secret });
+        this.log(ctx, 'A league is created.', { userId, league });
     }
 }
 

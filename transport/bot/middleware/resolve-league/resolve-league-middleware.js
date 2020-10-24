@@ -2,34 +2,43 @@
 
 const { Controller } = require('../../../../lib/controller');
 
+/** @typedef {import('../../../../lib/controller/controller').Options} ControllerOptions */
+/** @typedef {{ leagueService: import('../../../../service/league/league-service')} & ControllerOptions} Options */
+
 class ResolveLeagueMiddleware extends Controller {
 
+    /**
+     * @constructor
+     * @param {Options} options -
+     */
     constructor(options) {
         super(options);
 
         this._leagueService = options.leagueService;
-        this._managerService = options.managerService;
     }
 
     async process(ctx, { request }) {
         const {
-            manager
+            manager,
         } = request.state;
 
-        if (!manager) {
-            this.logWarn(ctx, 'Unable to resolve a league with no manager.');
+        const {
+            userId,
+        } = manager;
+
+        this.logDebug(ctx, 'Resolving a league.', { userId });
+
+        const league = await this._leagueService.getByUserId(ctx, { userId });
+
+        if (!league) {
+            this.logWarn(ctx, 'Unable to resolve a league. A manager has not joined a league yet.', { userId });
+
             return;
         }
+        
+        const { leagueId } = league;
 
-
-        if (!this._managerService.hasLeague(ctx, { manager })) {
-            this.logWarn(ctx, 'A manager has not not joined a league yet.');
-            return;
-        }
-
-        const secret = this._managerService.getSecret(ctx, { manager });
-
-        const league = await this._leagueService.getBySecret(ctx, { secret });
+        this.logDebug(ctx, 'A league is resolved.', { userId, leagueId });
 
         request.state.league = league;
     }

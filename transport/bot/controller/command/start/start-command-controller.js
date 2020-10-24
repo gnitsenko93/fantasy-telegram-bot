@@ -3,7 +3,7 @@
 const { Controller } = require('../../../../../lib/controller');
 const { BusinessLogicError, NotFoundError, errorType } = require('../../../../../error');
 
-/** @typedef {import('../../../../../lib/controller/controller').Context} Context */
+/** @typedef {import('../../../../../lib/controller/controller').RequestOptions} RequestOptions */
 /** @typedef {import('../../../../../lib/controller/controller').LoggingContext} LoggingContext */
 /** @typedef { { managerService: import('../../../../../service/manager/manager-service') } & import('../../../../../lib/controller/controller').Options} Options */
 
@@ -21,7 +21,7 @@ class StartCommandController extends Controller {
 
     /**
      * @param {LoggingContext} ctx -
-     * @param {{ request: Context }} options -
+     * @param {RequestOptions} options -
      * @returns {Promise<void>} -
      */
     async process(ctx, { request }) {
@@ -33,11 +33,13 @@ class StartCommandController extends Controller {
 
         this.log(ctx, 'Trying to resolve a manager by userId.', { userId });
 
-        let manager = await this._managerService.getByUserId(ctx, { userId });
+        const manager = await this._managerService.getByUserId(ctx, { userId });
 
         if (manager) {
             this.log(ctx, 'User is already registered as a manager.', { userId });
-            request.reply('You are already registered as a manager.');
+
+            request.reply('You are already registered as a manager. Use /info command for details.');
+            
             return;
         }
 
@@ -75,7 +77,7 @@ class StartCommandController extends Controller {
 
             await this._registerManagerBySecret(ctx, { user, secret });
 
-            request.reply('You are registered as a manager now.');
+            request.reply('You are registered as a manager now. Use /info command for details.');
 
             return;
         }
@@ -84,7 +86,7 @@ class StartCommandController extends Controller {
 
         await this._registerManager(ctx, { user });
 
-        request.reply('You are registered as a manager now.');
+        request.reply('You are registered as a manager now.  Use /info command for details.');
     }
 
     async processError(ctx, { error, request }) {

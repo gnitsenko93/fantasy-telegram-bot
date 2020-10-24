@@ -1,3 +1,7 @@
+## 2.1.0
+* Added **/createteam [name]** command.
+* Improved response to info command.
+
 ## 2.0.0
 
 * List of supported command:

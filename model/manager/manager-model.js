@@ -70,7 +70,7 @@ class ManagerModel extends Model {
 
             const { userId } = manager;
 
-            this.logDebug(ctx, 'A manager is created.', { userId, ...manager });
+            this.logDebug(ctx, 'A manager is created.', { userId, manager });
     
             return manager;
         } catch (error) {

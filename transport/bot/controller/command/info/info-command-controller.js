@@ -26,6 +26,8 @@ class InfoCommandController extends Controller {
         const {
             state: {
                 manager,
+                league,
+                team,
             },
         } = request;
 
@@ -38,16 +40,25 @@ class InfoCommandController extends Controller {
 
         let reply = `Hello, ${name}!`;
 
-        if (this._managerService.hasLeague(ctx, { manager })) {
-            const leagueId = await this._managerService.getLeagueId(ctx, { manager });
+        if (league) {
             const {
                 name: leagueName,
                 secret,
-            } = await this._leagueService.getByLeagueId(ctx, { leagueId });
+            } = league;
 
             reply = `${reply}\nYou are in a ${leagueName} league. Your league secret is ${secret}.`;
         } else {
             reply = `${reply}\nYou have not joined a league yet. To join a league use /createleague [name] or /joinleague [secret] commands.`;
+        }
+
+        if (team) {
+            const {
+                name: teamName,
+            } = team;
+
+            reply = `${reply}\nYou have ${teamName}.`;
+        } else {
+            reply = `${reply}\nYou do not have a team yet. To create a team use /createteam [name] command.`
         }
 
         request.reply(reply);

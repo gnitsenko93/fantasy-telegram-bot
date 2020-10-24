@@ -57,9 +57,13 @@ class MongoStorage extends Logable {
                 query, collection,
             } = options;
 
-            this.logDebug(ctx, 'Obtaining a value from a collection.', { ...options });
+            const mongoQuery = this._getQuery(ctx, { query });
 
-            const value = await this._db.collection(collection).findOne(query);
+            this.logDebug(ctx, 'Obtaining a value from a collection.', {
+                collection, query: mongoQuery,
+            });
+
+            const value = await this._db.collection(collection).findOne(mongoQuery);
 
             if (!value) {
                 this.logWarn(ctx, 'A value is not found in a collection.');
@@ -74,6 +78,22 @@ class MongoStorage extends Logable {
             this.logError(ctx, 'Error on obtaining a value from a collection.', { error });
             throw error;
         }
+    }
+
+    _getQuery(ctx, { query }) {
+        return Object.keys(query).reduce((acc, key) => {
+            if (Array.isArray(query[key])) {
+                acc[key] = {
+                    $in: [query[key]],
+                };
+            } else if (typeof query[key] !== 'undefined') {
+                acc[key] = {
+                    $eq: query[key],
+                };
+            }
+
+            return acc;
+        }, {});
     }
 
     /**
@@ -94,11 +114,11 @@ class MongoStorage extends Logable {
 
             const result = await this._db.collection(collection).insertOne(data);
 
-            const id = result.insertedId.toString();
+            const _id = result.insertedId.toString();
 
-            this.logDebug(ctx, 'A value is set in a collection.', { id, ...value });
+            this.logDebug(ctx, 'A value is set in a collection.', { _id, ...value });
 
-            return { id, ...value };
+            return { _id, ...value };
         } catch (error) {
             this.logError(ctx, 'Error on setting a value in a collection.', { error });
             throw error;
@@ -122,6 +142,30 @@ class MongoStorage extends Logable {
             this.logError(ctx, 'Error on updating a value in a collection.', { error });
             throw error;
         }
+    }
+
+    async pushToArray(ctx, options) {
+        const {
+            query, field, value, collection,
+        } = options;
+
+        await this._db.collection(collection).findOneAndUpdate(query, {
+            $push: {
+                [field]: value,
+            },
+        });
+    }
+
+    async pullFromArray(ctx, options) {
+        const {
+            query, field, value, collection,
+        } = options;
+
+        await this._db.collection(collection).findOneAndUpdate(query, {
+            $pull: {
+                [field]: value,
+            },
+        });
     }
 }
 

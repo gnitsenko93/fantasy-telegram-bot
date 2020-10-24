@@ -3,9 +3,9 @@
 const { Controller } = require('../../../../lib/controller');
 const { NotFoundError, errorType } = require('../../../../error');
 
-/** @typedef {import('../../../../lib/controller/controller').Context} Context */
+/** @typedef {import('../../../../lib/controller/controller').RequestOptions} RequestOptions */
 /** @typedef {import('../../../../lib/controller/controller').LoggingContext} LoggingContext */
-/** @typedef { { managerService: import('../../../../service/manager/manager-service') } & import('../../../../lib/controller/controller').ControllerOptions} Options */
+/** @typedef { { managerService: import('../../../../service/manager/manager-service') } & import('../../../../lib/controller/controller').Options} Options */
 
 class ResolveManagerMiddleware extends Controller {
 
@@ -21,7 +21,7 @@ class ResolveManagerMiddleware extends Controller {
 
     /**
      * @param {LoggingContext} ctx -
-     * @param {{ request: Context }} options -
+     * @param {RequestOptions} options -
      * @returns {Promise<void>} -
      */
     async process(ctx, { request }) {
@@ -31,9 +31,9 @@ class ResolveManagerMiddleware extends Controller {
             },
         } = request;
 
-        this.log(ctx, 'Resolving a manager by userId.', { userId });
+        this.log(ctx, 'Resolving a manager.', { userId });
 
-        let manager = await this._managerService.getByUserId(ctx, { userId });
+        const manager = await this._managerService.getByUserId(ctx, { userId });
 
         if (manager === null) {
             throw new NotFoundError({
@@ -50,7 +50,7 @@ class ResolveManagerMiddleware extends Controller {
 
     /**
      * @param {LoggingContext} ctx -
-     * @param {{ error: Error, request: Context }} options -
+     * @param {{ error: Error } & RequestOptions} options -
      * @returns {Promise<void>} -
      */
     async processError(ctx, { error, request }) {

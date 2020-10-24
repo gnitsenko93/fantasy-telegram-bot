@@ -5,7 +5,7 @@ const { Logable } = require('../../lib/log');
 const { factory } = require('../../lib/controller');
 const { CommandController } = require('./controller');
 const Middleware = require('./middleware');
-const { LeagueService, ManagerService } = require('../../service');
+const { LeagueService, ManagerService, TeamService } = require('../../service');
 
 /**
  * @typedef {Object} BotTransportOptions
@@ -55,9 +55,16 @@ class BotTransport extends Logable {
 
         const leagueService = new LeagueService(options);
         const managerService = new ManagerService(options);
+        const teamService = new TeamService(options);
 
+        const resolveLeagueMiddleware = factory(Middleware.ResolveLeagueMiddleware, {
+            leagueService, ...options,
+        });
         const resolveManagerMiddleware = factory(Middleware.ResolveManagerMiddleware, {
             managerService, ...options,
+        });
+        const resolveTeamService = factory(Middleware.ResolveTeamMiddleware, {
+            teamService, ...options,
         });
 
         const infoCommandController = factory(CommandController.InfoCommandController, {
@@ -73,10 +80,12 @@ class BotTransport extends Logable {
             command: 'joinleague', leagueService, managerService, ...options,
         });
         const leaveLeagueCommandController = factory(CommandController.LeaveLeagueCommandController, {
-            command: 'leaveleague', managerService, ...options,
+            command: 'leaveleague', leagueService, ...options,
+        });
+        const createTeamCommandController = factory(CommandController.CreateTeamCommandController, {
+            command: 'createTeam', managerService, teamService, ...options,
         });
 
-        const createTeamCommandController = factory(CommandController.CreateTeamCommandController, options);
         const createTransferCommandController = factory(CommandController.CreateTransferCommandController, options);
         const getTransferCommandController = factory(CommandController.GetTransferCommandController, options);
         const deleteTransferCommandController = factory(CommandController.DeleteTransferCommandController, options);
@@ -85,20 +94,30 @@ class BotTransport extends Logable {
 
         this._bot.use(resolveManagerMiddleware);
 
-        this._bot.command('info', infoCommandController);
+        this._bot.command('info', 
+            resolveLeagueMiddleware,
+            resolveTeamService,
+            infoCommandController
+        );
 
         this._bot.command('createleague', createLeagueCommandController);
-        this._bot.command('joinleague', joinLeagueCommandController);
-        this._bot.command('leaveleague', leaveLeagueCommandController);
+        this._bot.command('joinleague', resolveLeagueMiddleware, joinLeagueCommandController);
+        this._bot.command('leaveleague', resolveLeagueMiddleware, leaveLeagueCommandController);
 
-        this._bot.command('create-team', createTeamCommandController);
+        this._bot.command('createteam', resolveTeamService, createTeamCommandController);
 
-        this._bot.command('create-transfer', createTransferCommandController);
-        this._bot.command('get-transfer', getTransferCommandController);
-        this._bot.command('delete-transfer', deleteTransferCommandController);
+        this._bot.command('createtransfer', createTransferCommandController);
+        this._bot.command('gettransfer', getTransferCommandController);
+        this._bot.command('deletetransfer', deleteTransferCommandController);
 
         this._bot.catch((error, ctx) => {
-            this.logWarn({}, 'A message is processed with an error.', { error });
+            const {
+                state: {
+                    traceId,
+                },
+            } = ctx;
+
+            this.logWarn({ traceId }, 'A message is processed with an error.', { error });
         });
     }
 }
