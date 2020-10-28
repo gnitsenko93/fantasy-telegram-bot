@@ -1,16 +1,19 @@
 'use strict';
 
-const { v4: uuid } = require('uuid');
+const { generate: uuid } = require('short-uuid');
 
 const Model = require('../../lib/model');
 
 /** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
+/** @typedef {import('../../model/manager/manager-model').ManagerId} ManagerId */
+/** @typedef {import('mongodb').ObjectID} LeagueId */
 /**
  * @typedef {Object} LeagueData
- * @property {string} leagueId -
+ * @property {LeagueId} _id -
  * @property {string} secret -
  * @property {string} name -
- * @property {number} ownerId -
+ * @property {ManagerId} ownerId -
+ * @property {ManagerId[]} managers -
  */
 
 class LeagueModel extends Model {
@@ -19,8 +22,8 @@ class LeagueModel extends Model {
      * Loads a league from a database.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {number} [options.userId] -
-     * @param {string} [options.leagueId] -
+     * @param {ManagerId} [options.managerId] -
+     * @param {LeagueId} [options.leagueId] -
      * @param {string} [options.secret] -
      * @returns {Promise<LeagueData>} - 
      */
@@ -29,23 +32,18 @@ class LeagueModel extends Model {
             const { 
                 secret, 
                 leagueId,
-                userId,
+                managerId,
             } = options;
 
             this.logDebug(ctx, 'Loading a league from a storage.', options);
 
-            const query = {};
+            const query = {
+                _id: leagueId,
+                secret,
+            };
 
-            if (leagueId) {
-                query._id = leagueId;
-            }
-
-            if (userId) {
-                query.users = [userId];
-            }
-
-            if (secret) {
-                query.secret = secret;
+            if (managerId) {
+                query.managers = [managerId];
             }
 
             const league = await this._storage.get(ctx, { 
@@ -58,11 +56,9 @@ class LeagueModel extends Model {
                 return null;
             }
 
-            const leagueData = { leagueId: league._id, ...league };
+            this.logDebug(ctx, 'A league is loaded from a storage.', { league });
 
-            this.logDebug(ctx, 'A league is loaded from a storage.', leagueData);
-
-            return leagueData;
+            return league;
         } catch (error) {
             this.logError(ctx, 'Error on loading a league from a storage.', { error });
             throw error;
@@ -73,34 +69,31 @@ class LeagueModel extends Model {
      * Creates a league in a database.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {number} options.userId -
+     * @param {ManagerId} options.managerId -
      * @param {string} options.name -
      * @returns {Promise<LeagueData>} - 
      */
     async create(ctx, options) {
-        const { userId, name } = options;
+        const { managerId, name } = options;
 
         const secret = uuid();
 
-        this.logDebug(ctx, 'Creating a league in a storage.', { userId, name, secret });
+        this.logDebug(ctx, 'Creating a league in a storage.', { managerId, name, secret });
 
         try {
             const league = await this._storage.set(ctx, {
                 value: { 
                     name,
-                    ownerId: userId,
+                    ownerId: managerId,
                     secret,
-                    users: [],
+                    managers: [],
                 }, 
                 collection: this._collection,
             });
 
-            const { _id: leagueId } = league;
-            const leagueData = { leagueId, ...league };
+            this.logDebug(ctx, 'A league is created in a storage.', { league })
 
-            this.logDebug(ctx, 'A league is created in a storage.', leagueData)
-
-            return leagueData;
+            return league;
         } catch (error) {
             this.logError(ctx, 'Error on creating a league in storage.', { error });
 
@@ -109,46 +102,54 @@ class LeagueModel extends Model {
     }
 
     /**
-     * Inserts a user to league users.
+     * Inserts a manager to league managers.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {number} options.userId -
-     * @param {string} options.leagueId -
+     * @param {ManagerId} options.managerId -
+     * @param {LeagueId} options.leagueId -
      * @returns {Promise<void>} -
      */
-    async addUser(ctx, { userId, leagueId }) {
+    async addUser(ctx, { managerId, leagueId }) {
         try {
-            this.logDebug(ctx, 'Inserting a user to league users in a storage.', { userId, leagueId });
+            this.logDebug(ctx, 'Inserting a manager to league managers in a storage.', { managerId, leagueId });
 
             await this._storage.pushToArray(ctx, {
                 query: { _id: leagueId },
-                field: 'users',
-                value: userId,
+                field: 'managers',
+                value: managerId,
                 collection: this._collection
             });
 
-            this.logDebug(ctx, 'A user is inserted to league users in a storage.');
+            this.logDebug(ctx, 'A manager is inserted to league managers in a storage.', { managerId, leagueId });
         } catch (error) {
-            this.logError(ctx, 'Error on inserting a user to league users in a storage.', { error });
+            this.logError(ctx, 'Error on inserting a manager to league managers in a storage.', { error });
 
             throw error;
         }
     }
 
-    async removeUser(ctx, { userId, leagueId }) {
+    /**
+     * Removes a manager from league managers.
+     * @param {LoggingContext} ctx -
+     * @param {Object} options -
+     * @param {ManagerId} options.managerId -
+     * @param {LeagueId} options.leagueId -
+     * @returns {Promise<void>} -
+     */
+    async removeUser(ctx, { managerId, leagueId }) {
         try {
-            this.logDebug(ctx, 'Removing a user to league users in a storage.', { userId, leagueId });
+            this.logDebug(ctx, 'Removing a manager from league managers in a storage.', { managerId, leagueId });
 
             await this._storage.pullFromArray(ctx, {
                 query: { _id: leagueId },
-                field: 'users',
-                value: userId,
+                field: 'managers',
+                value: managerId,
                 collection: this._collection
             });
 
-            this.logDebug(ctx, 'A user is removed from league users in a storage.');
+            this.logDebug(ctx, 'A manager is removed from league managers in a storage.');
         } catch (error) {
-            this.logError(ctx, 'Error on removing a user from league users in a storage.', { error });
+            this.logError(ctx, 'Error on removing a manager from league managers in a storage.', { error });
 
             throw error;
         }

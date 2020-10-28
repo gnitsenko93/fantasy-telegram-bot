@@ -2,8 +2,8 @@
 
 const { Controller } = require('../../../../../lib/controller');
 
-/** @typedef {import('../../../../../lib/controller/controller').LoggingContext} LoggingContext */
 /** @typedef {import('../../../../../lib/controller/controller').Options} ControllerOptions */
+/** @typedef {import('../../../../../lib/controller/controller').LoggingContext} LoggingContext */
 /** @typedef {import('../../../../../lib/controller/controller').RequestOptions} RequestOptions */
 /**
  * @typedef {Object} CreateTeamCommandControllerOptions
@@ -36,16 +36,12 @@ class CreateTeamCommandController extends Controller {
             },
         } = request;
 
-        const {
-            userId,
-        } = manager;
-
         if (team) {
-            const { teamId, name } = team;
+            const { _id: teamId, name } = team;
 
             this.log(ctx, 'A manager already has a team.', { teamId });
 
-            request.reply(`You already have ${name} team`);
+            request.reply(`You already have ${name} team.`);
 
             return;
         }
@@ -53,18 +49,24 @@ class CreateTeamCommandController extends Controller {
         const name = this._getText(ctx, { request });
 
         if (!name) {
-            request.reply('Please, sent a name for a team. Use /createTeam [name] command.');
+            this.logWarn(ctx, 'Unable to create a team without a name.');
+
+            request.reply('Please, sent a name for a team. Use /createteam [name] command.');
 
             return;
         }
 
-        this.log(ctx, 'Creating a team for a manager.', { userId, name })
+        const {
+            _id: managerId,
+        } = manager;
 
-        const { teamId } = await this._teamService.create(ctx, { userId, name });
+        this.log(ctx, 'Creating a team for a manager.', { managerId, name })
+
+        const createdTeam = await this._teamService.create(ctx, { name, managerId });
 
         request.reply(`You have created ${name} team.`);
 
-        this.log(ctx, 'A team is created for a manager.', { userId, teamId });
+        this.log(ctx, 'A team is created for a manager.', { team: createdTeam });
     }
 }
 

@@ -8,7 +8,8 @@
             "db": "test_db",
             "collections": [
                 "managers",
-                "leagues"
+                "leagues",
+                "teams"
             ]
         }
     },

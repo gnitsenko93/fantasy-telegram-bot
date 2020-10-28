@@ -3,6 +3,11 @@
 const { Logable } = require('../../lib/log');
 const { TeamModel } = require('../../model');
 
+/** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
+/** @typedef {import('../../model/manager/manager-model').ManagerId} ManagerId */
+/** @typedef {import('../../model/team/team-model').TeamId} TeamId */
+/** @typedef {import('../../model/team/team-model').TeamData} TeamData */
+
 class TeamService extends Logable {
     
     constructor(options) {
@@ -17,10 +22,34 @@ class TeamService extends Logable {
     }
 
     /**
+     * Gets a team by managerId.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {string} options.teamId -
-     * @returns {Promise<TeamData|null>} -
+     * @param {ManagerId} options.managerId -
+     * @returns {Promise<TeamData>} -
+     */
+    async getByOwner(ctx, { managerId }) {
+        this.logDebug(ctx, 'Getting a team by a manager', { managerId });
+
+        const team = await this._teamModel.load(ctx, { managerId });
+
+        if (!team) {
+            this.logDebug(ctx, 'Unable to get a team by a manager.', { managerId });
+
+            return null;
+        }
+
+        this.logDebug(ctx, 'A team is got by a manager.', { team });
+
+        return team;
+    }
+
+    /**
+     * Gets a team by teamId.
+     * @param {LoggingContext} ctx -
+     * @param {Object} options -
+     * @param {TeamId} options.teamId -
+     * @returns {Promise<TeamData>} -
      */
     async getByTeamId(ctx, { teamId }) {
         this.logDebug(ctx, 'Getting a team by teamId', { teamId });
@@ -33,23 +62,29 @@ class TeamService extends Logable {
             return null;
         }
 
-        this.logDebug(ctx, 'A team is got by teamId.', { teamId, team });
+        this.logDebug(ctx, 'A team is got by teamId.', { team });
 
         return team;
     }
 
-    async getByUserId(ctx, { userId }) {
-        this.logDebug(ctx, 'Getting a team by userId', { userId });
+    /**
+     * Gets a team by a secret.
+     * @param {LoggingContext} ctx -
+     * @param {{secret: string}} options -
+     * @returns {Promise<TeamData>} - 
+     */
+    async getBySecret(ctx, { secret }) {
+        this.logDebug(ctx, 'Getting a team by secret', { secret });
 
-        const team = await this._teamModel.load(ctx, { userId });
+        const team = await this._teamModel.load(ctx, { secret });
 
         if (!team) {
-            this.logDebug(ctx, 'Unable to get a team by userId.', { userId });
+            this.logDebug(ctx, 'Unable to get a team by secret.', { secret });
 
             return null;
         }
 
-        this.logDebug(ctx, 'A team is got by userId.', { userId, team });
+        this.logDebug(ctx, 'A team is got by secret.', { team });
 
         return team;
     }
@@ -57,18 +92,24 @@ class TeamService extends Logable {
     /**
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {number} options.userId -
      * @param {string} options.name -
+     * @param {ManagerId} options.managerId -
      * @returns {Promise<TeamData>} -
      */
-    async create(ctx, { userId, name }) {
-        this.logDebug(ctx, 'Creating a team for a user.', { userId, name });
+    async create(ctx, { name, managerId }) {
+        try {
+            this.logDebug(ctx, 'Creating a team for a manager.', { name, managerId });
+    
+            const team = await this._teamModel.create(ctx, { name, managerId });
+    
+            this.logDebug(ctx, 'A team is created from a manager.', { team });
+    
+            return team;
+        } catch (error) {
+            this.logError(ctx, 'Error on creating a team for a manager.', { error });
 
-        const team = await this._teamModel.create(ctx, { userId, name });
-
-        this.logDebug(ctx, 'A team is created from a user.', { userId, team });
-
-        return team;
+            throw error;
+        }
     }
 }
 

@@ -66,14 +66,16 @@ class StartCommandController extends Controller {
 
             const secret = this._getText(ctx, { request });
 
-            this.logDebug(ctx, 'A manager secret is populated from a message.', { secret });
-
             if (!secret) {
+                this.logError(ctx, 'Unable to create a manager with an empty secret.');
+
                 throw new BusinessLogicError({
                     id: errorType.NoManagerSecret,
                     message: 'Unable to create a manager without a secret.',
                 });
             }
+
+            this.logDebug(ctx, 'A user secret is populated from a message.', { secret });
 
             await this._registerManagerBySecret(ctx, { user, secret });
 
@@ -130,11 +132,11 @@ class StartCommandController extends Controller {
             ...user,
         };
 
-        const { userId } = update;
+        const { _id: managerId, userId } = update;
 
-        this.logDebug(ctx, 'Actualizing a manager with a user data.', { userId, ...update });
+        this.logDebug(ctx, 'Actualizing a manager with a user data.', { managerId, userId, ...update });
 
-        await this._managerService.update(ctx, { user: update });
+        await this._managerService.update(ctx, { managerId, update });
 
         this.logDebug(ctx, 'Manager data is actualized.', { userId });
     }

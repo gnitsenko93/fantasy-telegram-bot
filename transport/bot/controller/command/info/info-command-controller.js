@@ -2,6 +2,8 @@
 
 const { Controller } = require('../../../../../lib/controller');
 
+/** @typedef {import('../../../../../lib/controller/controller').LoggingContext} LoggingContext */
+/** @typedef {import('../../../../../lib/controller/controller').RequestOptions} RequestOptions */
 /**
  * @typedef {Object} InfoCommandControllerOptions
  * @property {import('../../../../../service/league/league-service')} leagueService -
@@ -22,6 +24,11 @@ class InfoCommandController extends Controller {
         this._managerService = options.managerService;
     }
 
+    /**
+     * @param {LoggingContext} ctx - 
+     * @param {RequestOptions} options -
+     * @returns {Promise<void>} -
+     */
     async process(ctx, { request }) {
         const {
             state: {
@@ -32,11 +39,11 @@ class InfoCommandController extends Controller {
         } = request;
 
         const {
-            userId,
+            _id: managerId,
             firstName: name,
         } = manager;
 
-        this.log(ctx, 'Getting manager info.', { userId });
+        this.log(ctx, 'Obtaining manager info.', { managerId });
 
         let reply = `Hello, ${name}!`;
 
@@ -56,14 +63,14 @@ class InfoCommandController extends Controller {
                 name: teamName,
             } = team;
 
-            reply = `${reply}\nYou have ${teamName}.`;
+            reply = `${reply}\nYour team is ${teamName}.`;
         } else {
             reply = `${reply}\nYou do not have a team yet. To create a team use /createteam [name] command.`
         }
 
         request.reply(reply);
 
-        this.log(ctx, 'Manager info is obtained and sent to a user.');
+        this.log(ctx, 'Manager info is obtained and sent to a user.', { managerId });
     }
 }
 

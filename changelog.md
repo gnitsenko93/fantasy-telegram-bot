@@ -1,3 +1,6 @@
+## 2.1.1
+* Improved data sctructures.
+
 ## 2.1.0
 * Added **/createteam [name]** command.
 * Improved response to info command.

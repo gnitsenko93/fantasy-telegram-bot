@@ -1,11 +1,20 @@
 'use strict';
 
-const uuid = require('uuid').v4;
+const { generate: uuid } = require('short-uuid');
 
 const Model = require('../../lib/model');
 
 /** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
-/** @typedef {import('../../service/manager/manager-service').ManagerData} ManagerData */
+/** @typedef {import('mongodb').ObjectID} ManagerId */
+/**
+ * @typedef {Object} ManagerData
+ * @property {ManagerId} _id -
+ * @property {number} userId -
+ * @property {string} firstName -
+ * @property {string} lastName -
+ * @property {string} username -
+ * @property {string} [secret] -
+ */
 
 class ManagerModel extends Model {
 
@@ -22,13 +31,10 @@ class ManagerModel extends Model {
     
             this.logDebug(ctx, 'Loading a manager.', { userId, secret });
 
-            let query = {};
-
-            if (secret) { 
-                query.secret = secret; 
-            } else {
-                query.userId = userId;
-            }
+            const query = {
+                secret,
+                userId,
+            };
     
             const manager = await this._storage.get(ctx, { 
                 query, collection: this._collection, 
@@ -40,7 +46,7 @@ class ManagerModel extends Model {
                 return null; 
             } 
     
-            this.logDebug(ctx, 'A manager is loaded.', { userId: manager.userId, manager });
+            this.logDebug(ctx, 'A manager is loaded.', { manager });
     
             return manager;
         } catch (error) {
@@ -68,9 +74,7 @@ class ManagerModel extends Model {
                 value, collection: this._collection,
             });
 
-            const { userId } = manager;
-
-            this.logDebug(ctx, 'A manager is created.', { userId, manager });
+            this.logDebug(ctx, 'A manager is created.', { manager });
     
             return manager;
         } catch (error) {
@@ -81,32 +85,25 @@ class ManagerModel extends Model {
 
     /**
      * @param {LoggingContext} ctx -
-     * @param {{ user: ManagerData }} options -
+     * @param {{ managerId: ManagerId, update: ManagerData }} options -
      * @returns {Promise<ManagerData>} -
      */
     async patch(ctx, options) {
         try {
             const {
-                user
+                managerId,
+                update
             } = options;
-
-            const { userId, secret } = user;
     
-            this.logDebug(ctx, 'Updating a manager.', { userId, patch: user });
-
-            let query = {};
-
-            if (secret) { 
-                query.secret = secret; 
-            } else {
-                query.userId = userId;
-            }
+            this.logDebug(ctx, 'Updating a manager.', { managerId, update });
             
             await this._storage.update(ctx, {
-                patch: user, query, collection: this._collection,
+                query: { _id: managerId },
+                patch: update,
+                collection: this._collection,
             });
     
-            this.logDebug(ctx, 'A manager is updated.', { userId });
+            this.logDebug(ctx, 'A manager is updated.', { managerId });
     
             return;
         } catch (error) {

@@ -5,15 +5,8 @@ const Logable = require('../../lib/log/logable');
 const { ManagerModel } = require('../../model/index');
 
 /** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
-
-/**
- * @typedef {Object} ManagerData
- * @property {number} userId -
- * @property {string} firstName -
- * @property {string} lastName -
- * @property {string} username -
- * @property {string} [secret] -
- */
+/** @typedef {import('../../model/manager/manager-model').ManagerId} ManagerId */
+/** @typedef {import('../../model/manager/manager-model').ManagerData} ManagerData */
 
 class ManagerService extends Logable {
 
@@ -47,7 +40,7 @@ class ManagerService extends Logable {
             return null;
         }
 
-        this.logDebug(ctx, 'A manager is got by userId.', { userId });
+        this.logDebug(ctx, 'A manager is got by userId.', { manager });
 
         return manager;
     }
@@ -62,19 +55,17 @@ class ManagerService extends Logable {
     async getBySecret(ctx, options) {
         const { secret } = options;
 
-        this.logDebug(ctx, 'Getting a manager by secret', { secret });
+        this.logDebug(ctx, 'Getting a manager by a secret', { secret });
 
         const manager = await this._managerModel.load(ctx, { secret });
 
         if (!manager) {
-            this.logDebug(ctx, 'Unable to get a manager by secret.', { secret });
+            this.logDebug(ctx, 'Unable to get a manager by a secret.', { secret });
 
             return null;
         }
 
-        const { userId } = manager;
-
-        this.logDebug(ctx, 'A manager is got by secret.', { userId, secret });
+        this.logDebug(ctx, 'A manager is got by a secret.', { manager });
 
         return manager;
     }
@@ -100,13 +91,14 @@ class ManagerService extends Logable {
      * Updates a manager.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {ManagerData} options.user -
+     * @param {ManagerId} options.managerId -
+     * @param {ManagerData} options.update -
      * @returns {Promise<void>} -
      */
     async update(ctx, options) {
-        const { user } = options;
+        const { managerId, update } = options;
 
-        await this._managerModel.patch(ctx, { user });
+        await this._managerModel.patch(ctx, { managerId, update });
     }
 
     async joinLeague(ctx, { userId, leagueId }) {

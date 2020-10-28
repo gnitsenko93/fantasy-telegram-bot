@@ -16,13 +16,13 @@ class MongoStorage extends Logable {
             url,
             options: {
                 client: clientOptions,
-                db: dbOptions,
+                db,
             },
         } = options.config;
 
         this._url = url;
         this._clientOptions = clientOptions;
-        this._dbOptions = dbOptions;
+        this._dbName = db;
 
         this._client = new MongoClient(this._url, this._clientOptions);
         this._db = null;
@@ -32,7 +32,7 @@ class MongoStorage extends Logable {
         try {
             this.log(ctx, 'Connecting to MongoDB.', { url: this._url });
             await this._client.connect();
-            this._db = this._client.db(this._dbOptions.name);
+            this._db = this._client.db(this._dbName);
             this.log(ctx, 'Connected to MongoDB.');
         } catch (error) {
             this.logError(ctx, 'Error on connecting to MongoDB.', { error });
@@ -82,9 +82,9 @@ class MongoStorage extends Logable {
 
     _getQuery(ctx, { query }) {
         return Object.keys(query).reduce((acc, key) => {
-            if (Array.isArray(query[key])) {
+            if (Array.isArray(query[key]) && query[key].length) {
                 acc[key] = {
-                    $in: [query[key]],
+                    $in: query[key],
                 };
             } else if (typeof query[key] !== 'undefined') {
                 acc[key] = {
@@ -110,15 +110,15 @@ class MongoStorage extends Logable {
 
             this.logDebug(ctx, 'Setting a value in a collection.', { ...options });
 
-            const data = { _id: value.id, ..._.omit(value, ['id'])};
+            const result = await this._db.collection(collection).insertOne(value);
 
-            const result = await this._db.collection(collection).insertOne(data);
+            const _id = result.insertedId;
 
-            const _id = result.insertedId.toString();
+            const data = { _id, ...value };
 
-            this.logDebug(ctx, 'A value is set in a collection.', { _id, ...value });
+            this.logDebug(ctx, 'A value is set in a collection.', data);
 
-            return { _id, ...value };
+            return data;
         } catch (error) {
             this.logError(ctx, 'Error on setting a value in a collection.', { error });
             throw error;

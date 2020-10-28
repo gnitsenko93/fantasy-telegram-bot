@@ -43,7 +43,7 @@ class ResolveManagerMiddleware extends Controller {
             });
         }
 
-        this.log(ctx, 'A manager is resolved.', { userId });
+        this.log(ctx, 'A manager is resolved.', { manager });
 
         request.state.manager = manager;
     }

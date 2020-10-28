@@ -1,11 +1,16 @@
 'use strict';
 
-const uuid = require('uuid').v4;
-
 const Model = require('../../lib/model');
 
 /** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
-/** @typedef {import('../../service/team/team-service').TeamData} TeamData */
+/** @typedef {import('mongodb').ObjectID} TeamId */
+/** @typedef {import('../manager/manager-model').ManagerId} ManagerId */
+/**
+ * @typedef {Object} TeamData
+ * @property {TeamId} _id
+ * @property {string} name -
+ * @property {ManagerId} ownerId -
+ */
 
 class TeamModel extends Model {
 
@@ -13,19 +18,21 @@ class TeamModel extends Model {
      * Loads a team from a storage.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {string} [options.teamId] -
-     * @param {number} [options.userId] -
+     * @param {TeamId} [options.teamId] -
+     * @param {number} [options.secret] -
+     * @param {ManagerId} [options.managerId] -
      * @returns {Promise<TeamData>} -
      */
     async load(ctx, options) {
         try {
-            const { teamId, userId } = options;
+            const { teamId, secret, managerId } = options;
     
-            this.logDebug(ctx, 'Loading a team.', { teamId, userId });
+            this.logDebug(ctx, 'Loading a team.', { teamId, secret, managerId });
 
             const query = { 
-                _id: teamId, 
-                userId,
+                _id: teamId,
+                ownerId: managerId,
+                secret,
             };
     
             const team = await this._storage.get(ctx, { 
@@ -33,7 +40,7 @@ class TeamModel extends Model {
             });
     
             if (!team) { 
-                this.logWarn(ctx, 'A team is not found.', { teamId, userId });
+                this.logWarn(ctx, 'A team is not found.', { teamId, secret });
             
                 return null; 
             } 
@@ -53,15 +60,13 @@ class TeamModel extends Model {
      * Creates a team in a storage.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {number} options.userId -
      * @param {string} options.name -
+     * @param {ManagerId} options.managerId -
      * @returns {Promise<TeamData>} -
      */
-    async create(ctx, { userId, name }) {
+    async create(ctx, { name, managerId }) {
         try {
-            const teamId = uuid();
-
-            const value = { userId, name, teamId };
+            const value = { name, ownerId: managerId };
 
             this.logDebug(ctx, 'Creating a team.', { ...value });
     
