@@ -22,6 +22,10 @@ const config = convict({
             format: Boolean,
             default: false,
         },
+        transfersCount: {
+            format: Number,
+            default: 3,
+        },
     },
 });
 

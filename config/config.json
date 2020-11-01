@@ -1,6 +1,6 @@
 {
     "storage": {
-        "url": "mongodb://localhost:32768",
+        "url": "mongodb://localhost:32769",
         "options": {
             "client": {
                 "useUnifiedTopology": true
@@ -14,6 +14,7 @@
         }
     },
     "options": {
-        "enableManagerCreationWithoutSecret": false
+        "enableManagerCreationWithoutSecret": false,
+        "transfersCount": 3
     }
 }

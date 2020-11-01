@@ -80,6 +80,35 @@ class MongoStorage extends Logable {
         }
     }
 
+    async getMany(ctx, options) {
+        try {
+            const {
+                query, collection,
+            } = options;
+
+            const mongoQuery = this._getQuery(ctx, { query });
+
+            this.logDebug(ctx, 'Obtaining multiple values from a collection.', {
+                collection, query: mongoQuery,
+            });
+
+            const values = await this._db.collection(collection).find(mongoQuery).toArray();
+
+            if (!values || !values.length) {
+                this.logWarn(ctx, 'No values are found in a collection.');
+
+                return [];
+            }
+
+            this.logDebug(ctx, 'Value are obtained from a collection.', { values });
+
+            return values;
+        } catch (error) {
+            this.logError(ctx, 'Error on obtaining a value from a collection.', { error });
+            throw error;
+        }
+    }
+
     _getQuery(ctx, { query }) {
         return Object.keys(query).reduce((acc, key) => {
             if (Array.isArray(query[key]) && query[key].length) {
@@ -110,9 +139,7 @@ class MongoStorage extends Logable {
 
             this.logDebug(ctx, 'Setting a value in a collection.', { ...options });
 
-            const result = await this._db.collection(collection).insertOne(value);
-
-            const _id = result.insertedId;
+            const { insertedId: _id } = await this._db.collection(collection).insertOne(value);
 
             const data = { _id, ...value };
 
@@ -166,6 +193,28 @@ class MongoStorage extends Logable {
                 [field]: value,
             },
         });
+    }
+
+    /**
+     * Counts documents in a collection.
+     * @param {LoggingContext} ctx -
+     * @param {Object} options -
+     * @param {Object} options.query -
+     * @param {string} options.collection -
+     * @returns {Promise<number>} -
+     */
+    async count(ctx, options) {
+        const {
+            query, collection,
+        } = options;
+
+        this.logDebug(ctx, 'Counting documents in a collection.', { query, collection });
+
+        const count = await this._db.collection(collection).countDocuments(query);
+
+        this.logDebug(ctx, 'Documents in a collection are counted.', { count });
+
+        return count;
     }
 }
 

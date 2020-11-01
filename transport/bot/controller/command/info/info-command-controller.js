@@ -8,6 +8,7 @@ const { Controller } = require('../../../../../lib/controller');
  * @typedef {Object} InfoCommandControllerOptions
  * @property {import('../../../../../service/league/league-service')} leagueService -
  * @property {import('../../../../../service/manager/manager-service')} managerService -
+ * @property {import('../../../../../service/player/player-service')} playerService -
  */
 /** @typedef {InfoCommandControllerOptions & import('../../../../../lib/controller/controller').Options} Options */
 
@@ -22,6 +23,7 @@ class InfoCommandController extends Controller {
 
         this._leagueService = options.leagueService;
         this._managerService = options.managerService;
+        this._playerService = options.playerService;
     }
 
     /**
@@ -37,6 +39,14 @@ class InfoCommandController extends Controller {
                 team,
             },
         } = request;
+
+        if (!manager) {
+            this.logWarn(ctx, 'Unable to obtain unknown manager info.');
+
+            request.reply('Use /start command to register as a manager.');
+
+            return;
+        }
 
         const {
             _id: managerId,
@@ -60,10 +70,30 @@ class InfoCommandController extends Controller {
 
         if (team) {
             const {
+                _id: teamId,
                 name: teamName,
             } = team;
 
             reply = `${reply}\nYour team is ${teamName}.`;
+
+            const players = await this._playerService.getTeamPlayers(ctx, { teamId });
+
+            if (!players.length) {
+                reply = `${reply}\nYou have no players signed.`;
+            } else {
+                reply = `${reply}\nYou have signed ${players.length} players:`;
+
+                for (let index in players) {
+                    const {
+                        amplua,
+                        name: playerName,
+                        price,
+                        club,
+                    } = players[index];
+
+                    reply = `${reply}\n${Number(index) + 1}. ${playerName}, ${amplua}, ${club}. Price is ${price}.`;
+                }
+            }
         } else {
             reply = `${reply}\nYou do not have a team yet. To create a team use /createteam [name] command.`
         }

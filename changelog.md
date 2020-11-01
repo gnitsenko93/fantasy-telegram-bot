@@ -1,3 +1,6 @@
+## 2.2.1
+* Added **/transfer [inbound application] [outbound application]** command.
+
 ## 2.1.1
 * Improved data sctructures.
 

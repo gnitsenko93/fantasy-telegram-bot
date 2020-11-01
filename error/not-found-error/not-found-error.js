@@ -2,7 +2,7 @@
 
 const BusinessLogicError = require('../business-logic-error/business-logic-error');
 
-/** @typedef {'manager'|'team'|'player'|'transfer'|'league'} Resource */
+/** @typedef {any} Resource */
 /** @typedef {{ resource: Resource } & import('../business-logic-error/business-logic-error').Options} Options */
 
 class NotFoundError extends BusinessLogicError {
@@ -15,6 +15,10 @@ class NotFoundError extends BusinessLogicError {
         super(options);
 
         this._resource = options.resource;
+    }
+
+    get resource() {
+        return this._resource;
     }
 
     toJSON() {
