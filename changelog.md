@@ -1,3 +1,7 @@
+## 2.3.1
+* Added **/transfers** command.
+* Added **/abort [transfer priority]** command.
+
 ## 2.2.1
 * Added **/transfer [inbound application] [outbound application]** command.
 

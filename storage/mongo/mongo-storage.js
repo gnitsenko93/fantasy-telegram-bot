@@ -216,6 +216,22 @@ class MongoStorage extends Logable {
 
         return count;
     }
+
+    /**
+     * 
+     * @param {LoggingContext} ctx -
+     * @param {Object[]} operations -
+     * @param {Object} options -
+     * @param {string} options.collection -
+     * @returns {Promise<void>} -
+     */
+    async bulkUpdate(ctx, operations, { collection }) {
+        this.logDebug(ctx, 'Performing a bulk write to a collection.', { operations, collection });
+
+        const result = await this._db.collection(collection).bulkWrite(operations);
+
+        this.logDebug(ctx, 'A bulk write to a collection is performed.', result);
+    }
 }
 
 module.exports = MongoStorage;

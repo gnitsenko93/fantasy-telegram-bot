@@ -59,7 +59,9 @@ class BotTransport extends Logable {
         const managerService = new ManagerService(options);
         const teamService = new TeamService(options);
         const playerService = new PlayerService(options);
-        const transferService = new TransferService(options);
+        const transferService = new TransferService({
+            playerService, ...options,
+        });
 
         const resolveLeagueMiddleware = factory(Middleware.ResolveLeagueMiddleware, {
             leagueService, ...options,
@@ -93,8 +95,12 @@ class BotTransport extends Logable {
         const createTransferCommandController = factory(CommandController.CreateTransferCommandController, {
             command: 'transfer', playerService, transferService, ...options,
         });
-        const getTransferCommandController = factory(CommandController.GetTransferCommandController, options);
-        const deleteTransferCommandController = factory(CommandController.DeleteTransferCommandController, options);
+        const getTransfersCommandController = factory(CommandController.GetTransfersCommandController, {
+            command: 'transfers', transferService, ...options,
+        });
+        const deleteTransferCommandController = factory(CommandController.DeleteTransferCommandController, {
+            command: 'abort', transferService, ...options,
+        });
 
         this._bot.command('start', startCommandController);
 
@@ -113,8 +119,8 @@ class BotTransport extends Logable {
         this._bot.command('createteam', resolveTeamService, createTeamCommandController);
 
         this._bot.command('transfer', createTransferCommandController);
-        this._bot.command('gettransfer', getTransferCommandController);
-        this._bot.command('deletetransfer', deleteTransferCommandController);
+        this._bot.command('transfers', getTransfersCommandController);
+        this._bot.command('abort', deleteTransferCommandController);
 
         this._bot.catch((error, ctx) => {
             const {

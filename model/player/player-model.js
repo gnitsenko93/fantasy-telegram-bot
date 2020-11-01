@@ -52,6 +52,7 @@ class PlayerModel extends Model {
      * Loads a player from a database.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
+     * @param {PlayerId} options.playerId player name
      * @param {string} options.name player name
      * @param {PlayerClub} options.club player club
      * @param {PlayerAmplua} options.amplua player amplua
@@ -59,10 +60,17 @@ class PlayerModel extends Model {
      */
     async load(ctx, options) {
         try {
-            this.logDebug(ctx, 'Loading a player from a database.');
+            this.logDebug(ctx, 'Loading a player from a database.', options);
+
+            const query = {
+                _id: options.playerId,
+                name: options.name,
+                club: options.club,
+                amplua: options.amplua,
+            };
 
             const player = await this._storage.get(ctx, {
-                query: options,
+                query,
                 collection: this._collection,
             });
 

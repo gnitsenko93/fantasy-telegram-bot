@@ -10,7 +10,7 @@ const LeaveLeagueCommandController = require('./leave-league/leave-league-comman
 const CreateTeamCommandController = require('./create-team/create-team-command-controller');
 
 const CreateTransferCommandController = require('./create-transfer/create-transfer-command-controller');
-const GetTransferCommandController = require('./get-transfer/get-transfer-command-controller');
+const GetTransfersCommandController = require('./get-transfers/get-transfers-command-controller');
 const DeleteTransferCommandController = require('./delete-transfer/delete-transfer-command-controller');
 
 module.exports = {
@@ -24,6 +24,6 @@ module.exports = {
     CreateTeamCommandController,
 
     CreateTransferCommandController,
-    GetTransferCommandController,
+    GetTransfersCommandController,
     DeleteTransferCommandController,
 };

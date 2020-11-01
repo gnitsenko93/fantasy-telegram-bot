@@ -6,6 +6,7 @@ const { PlayerModel } = require('../../model/index');
 
 /** @typedef {import('../../lib/controller/controller').LoggingContext} LoggingContext */
 /** @typedef {import('../../model/team/team-model').TeamId} TeamId */
+/** @typedef {import('../../model/player/player-model').PlayerId} PlayerId */
 /** @typedef {import('../../model/player/player-model').PlayerClub} PlayerClub */
 /** @typedef {import('../../model/player/player-model').PlayerAmplua} PlayerAmplua */
 /** @typedef {import('../../model/player/player-model').PlayerData} PlayerData */
@@ -50,16 +51,17 @@ class PlayerService extends Logable {
      * Obtains a player.
      * @param {LoggingContext} ctx -
      * @param {Object} options -
-     * @param {string} options.name player name
-     * @param {PlayerClub} options.club player club
-     * @param {PlayerAmplua} options.amplua player amplua
+     * @param {PlayerId} [options.playerId] player name
+     * @param {string} [options.name] player name
+     * @param {PlayerClub} [options.club] player club
+     * @param {PlayerAmplua} [options.amplua] player amplua
      * @returns {Promise<PlayerData>} - 
      */
-    async get(ctx, { name, club, amplua }) {
+    async get(ctx, { playerId, name, club, amplua }) {
         try {
-            this.logDebug(ctx, 'Obtaining a player.', { name, club, amplua });
+            this.logDebug(ctx, 'Obtaining a player.', { playerId, name, club, amplua });
 
-            const player = await this._playerModel.load(ctx, { name, club, amplua });
+            const player = await this._playerModel.load(ctx, { playerId, name, club, amplua });
 
             if (!player) {
                 this.logDebug(ctx, 'A player is not found in a database.');

@@ -10,4 +10,5 @@ module.exports = {
     ParsingError: 'ff6e898e-0986-4aa5-8904-af629f79efca',
     UnknownInboundPlayer: 'a57e8f9e-adff-4061-8a92-d89a6db8d595',
     UnknownOutboundPlayer: '11f24e31-fced-41e9-94fd-d8ea283aea6b',
+    WrongTransferPriority: '6c2074fd-ef4f-4807-a1a4-3f52594752d4',
 };

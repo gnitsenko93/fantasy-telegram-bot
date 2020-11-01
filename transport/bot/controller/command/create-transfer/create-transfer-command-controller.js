@@ -247,9 +247,10 @@ class CreateTransferCommandController extends Controller {
                 request.reply('You have exceeded number of possible transfers. Check your applications using /transfers command.');
                 throw error;
             case error instanceof BusinessLogicError && error.id === errorType.ParsingError:
-                request.reply(`There was a problem with parsing your message: [${super._getText(ctx, { request })}]`);
-                request.reply('Correct usage of the command is /transfer <inbound player name>, <position>, <club> <outbound player name>, <position>, <club>');
-                request.reply('For example, /transfer Кокорин, Нападающий, Спартак Деспотович, Нападающий, Рубин');
+                request.reply(`There was a problem with undestanding your message:\n\n[${super._getText(ctx, { request })}]`);
+                const help = '/transfer <inbound player name>, <position>, <club> <outbound player name>, <position>, <club>';
+                const example = '/transfer Влашич, Полузащитник, ЦСКА Бакаев, Полузащитник, Спартак';
+                request.reply(`Correct usage of the command is ${help}. For example:\n\n${example}`);
                 throw error;
             case error instanceof NotFoundError && (error.id === errorType.UnknownInboundPlayer || error.id === errorType.UnknownOutboundPlayer):
                 const {
